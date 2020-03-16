@@ -1,0 +1,39 @@
+# confuguration for kafka
+# this deployment is used or stresstesting purposes
+
+replicas: 3
+
+affinity:
+  podAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - kafka
+        topologyKey: "kubernetes.io/hostname"
+
+nodeSelector:
+  pool: kafka
+
+configurationOverrides:
+  "auto.leader.rebalance.enable": true
+  "auto.create.topics.enable": true
+  "controlled.shutdown.enable": true
+
+persistence:
+  enabled: false
+
+topics:
+  - name: apple_watch
+    partitions: 1
+    replicationFactor: 2
+    config: "cleanup.policy=delete,delete.retention.ms=604800000"
+
+zookeeper:
+  enabled: false
+  url: "zookeeper"
+  port: 2181

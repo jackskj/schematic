@@ -1,0 +1,25 @@
+syntax="proto3";
+
+package pb;
+
+// The schemantic layes maintains all versions of schemas for all topics
+// Schema registration allows evolution of messages
+//
+// Requesting schema allows programs to decode and use unknow messages dynamically
+service Schematic {
+  rpc RegisterSchema (Schema ) returns (EmptyResponse) {}
+  rpc GetSchema ( SchemaReq ) returns (Schema) {}
+}
+
+message Schema {
+  string topic = 1;
+  string version = 2;
+  bytes file_descriptor = 3; // proto descriptor of the shema to be registered, this is the desctiptor of the message type
+}
+
+message SchemaReq {
+  string topic = 1;
+  string version = 2;
+}
+
+message EmptyResponse {}

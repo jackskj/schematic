@@ -1,0 +1,21 @@
+syntax="proto3";
+
+package pb;
+
+// The collector service, intended to stream data from an apple watch to kafka using grpc
+// This is a generic service, the payload of the message is a generic protobub in wire format
+service Collector {
+  rpc StreamRecords (stream Record ) returns ( Ack ) {}
+  rpc PutRecord ( Record ) returns ( Ack ) {}
+}
+
+message Record{
+  string topic = 1;
+  string version = 2;
+  bytes payload  = 3;  // any protobuff message in wire format
+}
+
+// Acknowlage
+message Ack {
+  bool ack = 1;
+}

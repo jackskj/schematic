@@ -1,0 +1,13 @@
+syntax="proto3";
+
+package pb;
+
+//  Sample message to be sent from an apple watch over grpc to the collector
+message Biometrics{
+  int32 watch_id    = 1;
+  string user_name  = 2;
+  int32 heartbeat   = 3;
+  int32 temperature = 4;
+  float latitude    = 5;
+  float longitude   = 6;
+}

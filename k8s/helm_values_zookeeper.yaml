@@ -1,0 +1,9 @@
+# confuguration for zookeerer, 
+# this deploymne is used or stresstesting purposes, only one replica is needed
+replicaCount: 1
+
+nodeSelector:
+  pool: zookeeper
+
+persistence:
+  enabled: false

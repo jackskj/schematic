@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collector
+  labels:
+    app: collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: collector
+  template:
+    metadata:
+      labels:
+        app: collector
+    spec:
+      containers:
+      - name: collector
+        image: "docker.io/jackskj/collector:collector_container"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 15009
+      nodeSelector:
+        pool: collector
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: collector
+spec:
+  selector:
+    app: collector
+  ports:
+    - protocol: TCP
+      port: 15009
+      targetPort: 15009
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stresstest
+  labels:
+    app: stresstest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stresstest
+  template:
+    metadata:
+      labels:
+        app: stresstest
+    spec:
+      containers:
+      - name: stresstest
+        image: "docker.io/jackskj/stresstest:stresstest_container"
+        imagePullPolicy: Always
+      nodeSelector:
+        pool: stresstest
