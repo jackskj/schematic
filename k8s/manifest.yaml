@@ -1,3 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stresstest
+data:
+  stresstest: "{\"message_benchmark\": 10000000,\"goroutines\": 2500, \"pods\": 10, \"tests\": 1, \"start_time\": 1584401815 }"
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,9 +28,29 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 15009
+        env:
+        - name: STRESS_VALUES
+          valueFrom:
+            configMapKeyRef:
+              name: stresstest
+              key: stresstest
+        resources:
+          # n1-standard-4
+          # requests:
+            # memory: "11500Mi"
+            # cpu: "3250m"
+          # limits:
+            # memory: "11500Mi"
+            # cpu: "3250m"
+          # n1-standard-8
+          requests:
+            memory: "26000Mi"
+            cpu: "7325m"
+          limits:
+            memory: "26000Mi"
+            cpu: "7325m"
       nodeSelector:
         pool: collector
-
 ---
 apiVersion: v1
 kind: Service
@@ -44,7 +72,7 @@ metadata:
   labels:
     app: stresstest
 spec:
-  replicas: 1
+  replicas: 10
   selector:
     matchLabels:
       app: stresstest
@@ -57,5 +85,18 @@ spec:
       - name: stresstest
         image: "docker.io/jackskj/stresstest:stresstest_container"
         imagePullPolicy: Always
+        env:
+        - name: STRESS_VALUES
+          valueFrom:
+            configMapKeyRef:
+              name: stresstest
+              key: stresstest
+        resources:
+          requests:
+            memory: "5000Mi"
+            cpu: "1400m"
+          limits:
+            memory: "5000Mi"
+            cpu: "1400m"
       nodeSelector:
         pool: stresstest

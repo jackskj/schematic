@@ -9,6 +9,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//stresstest/pb:go_default_library",
+        "//stresstest/stress:go_default_library",
         "@org_golang_google_grpc//:go_default_library",
     ],
 )

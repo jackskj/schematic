@@ -15,6 +15,7 @@ go_library(
     deps = [
         "//collector/pb:go_default_library",
         "//collector/schemas/pb:go_default_library",
+        "//stresstest/stress:go_default_library",
         "@com_github_golang_protobuf//proto:go_default_library",
         "@com_github_golang_protobuf//protoc-gen-go/descriptor:go_default_library",
         "@com_github_shopify_sarama//:go_default_library",

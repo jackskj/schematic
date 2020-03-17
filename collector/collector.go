@@ -4,18 +4,21 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"io"
 	"log"
+	"os"
+	"sync/atomic"
 	"time"
-	// "sync/atomic"
 
 	"github.com/Shopify/sarama"
 	"github.com/jackskj/schematic/collector/pb"
+	"github.com/jackskj/schematic/stresstest/stress"
 )
 
 var (
-	timer            time.Time
-	messageBenchmark = 10000000
+	timer      time.Time
+	stressVals = stress.Stress{MessageBenchmark: 1000000}
 )
 
 type Server struct {
@@ -29,12 +32,12 @@ type Server struct {
 
 // Atomic counter to the number of messages sent
 type Key struct {
-	Counter int
+	Counter *int64
 }
 
 func (k *Key) Encode() ([]byte, error) {
 	buff := &bytes.Buffer{}
-	err := binary.Write(buff, binary.LittleEndian, int64(k.Counter))
+	err := binary.Write(buff, binary.LittleEndian, *k.Counter)
 	return buff.Bytes(), err
 }
 
@@ -48,23 +51,22 @@ func newCollector() (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	zero := int64(0)
 	svc := &Server{
 		WatchProducer: newWatchProducer(brokerList),
 		KafkaVersion:  kafkaVersion,
-		Key:           &Key{Counter: 0},
+		Key:           &Key{Counter: &zero},
 		begin:         true,
 	}
 	go func() {
-		// for err := range svc.WatchProducer.Errors() {
-		// log.Fatal("Failed to write access log entry:", err)
-		// }
 		for _ = range svc.WatchProducer.Successes() {
 			//increment counter
-			svc.Key.Counter++
-			if svc.Key.Counter == messageBenchmark {
-				svc.Key.Counter = 0
+			atomic.AddInt64(svc.Key.Counter, int64(1))
+			if *svc.Key.Counter == int64(stressVals.MessageBenchmark) {
+				zero := int64(0)
+				svc.Key.Counter = &zero
 				duration := time.Since(timer)
-				log.Println("Sent %s messages in %s seconds", messageBenchmark, duration.Seconds())
+				log.Printf("Sent %s messages in %s seconds\n", stressVals.MessageBenchmark, duration.Seconds())
 				timer = time.Now()
 			}
 		}
@@ -82,7 +84,7 @@ func (s *Server) Close() error {
 func (s *Server) StreamRecords(stream pb.Collector_StreamRecordsServer) error {
 	if s.begin == true {
 		s.begin = false
-		timer = time.Now()
+		timer = time.Unix(stressVals.StartTime, 0)
 	}
 	for {
 		//reveceiving streamedresponse
@@ -109,4 +111,12 @@ func (s *Server) PutRecord(ctx context.Context, rc *pb.Record) (*pb.Ack, error) 
 		Value: rc,
 	}
 	return &pb.Ack{Ack: true}, nil
+}
+
+func loadStressVals() {
+	vals := os.Getenv("STRESS_VALUES")
+	if vals != "" {
+		json.Unmarshal([]byte(vals), &stressVals)
+	}
+	log.Printf("loaded stress values: %s \n", stressVals)
 }
