@@ -17,8 +17,9 @@ import (
 )
 
 var (
-	timer      time.Time
-	stressVals = stress.Stress{MessageBenchmark: 1000000}
+	timer           time.Time
+	stressVals      = stress.Stress{}
+	isStressTesting = false //indicates if we are running collector stress test
 )
 
 type Server struct {
@@ -26,11 +27,10 @@ type Server struct {
 	KafkaVersion  sarama.KafkaVersion
 	Key           *Key
 
-	// indicates when to start counter for benchmarking
-	begin bool
+	begin bool // indicates when to start counter for benchmarking
 }
 
-// Atomic counter to the number of messages sent
+// Key and atomic counter to the number of messages sent
 type Key struct {
 	Counter *int64
 }
@@ -58,11 +58,12 @@ func newCollector() (*Server, error) {
 		Key:           &Key{Counter: &zero},
 		begin:         true,
 	}
+	// atomically count successfully sent messages in a separater routine
 	go func() {
 		for _ = range svc.WatchProducer.Successes() {
 			//increment counter
 			atomic.AddInt64(svc.Key.Counter, int64(1))
-			if *svc.Key.Counter == int64(stressVals.MessageBenchmark) {
+			if *svc.Key.Counter == int64(stressVals.MessageBenchmark) && isStressTesting == true {
 				zero := int64(0)
 				svc.Key.Counter = &zero
 				duration := time.Since(timer)
@@ -117,6 +118,7 @@ func loadStressVals() {
 	vals := os.Getenv("STRESS_VALUES")
 	if vals != "" {
 		json.Unmarshal([]byte(vals), &stressVals)
+		isStressTesting = true
 	}
 	log.Printf("loaded stress values: %s \n", stressVals)
 }
